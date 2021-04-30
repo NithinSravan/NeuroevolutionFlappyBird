@@ -2,12 +2,16 @@ import pygame, random
 import sys
 import numpy as np
 from NeuralNetwork import neuralNetwork
+from pygame.locals import *
+import math
+
 
 WIN_HEIGHT = 800
 WIN_WIDTH = 500
-POPULATION = 500
+POPULATION = 250
+maxScore = 0
 pygame.init()
-screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT),pygame.SRCALPHA)
 
 # bg image
 bg_surface = pygame.image.load('Assets/bg.png').convert()
@@ -22,11 +26,62 @@ floor_surface = pygame.transform.scale2x(floor_surface)
 bird_surface = pygame.image.load('Assets/bird2.png').convert()
 bird_surface = pygame.transform.scale2x(bird_surface)
 
-
 # pipe image
 pipe_surface = pygame.image.load('Assets/pipe.png').convert()
 pipe_surface = pygame.transform.scale2x(pipe_surface)
 
+#class HUD
+class HUD:
+    def __init__(self):
+        self.font = pygame.font.Font('Assets/Raleway-Regular.ttf', 24)
+        self.X = 300
+        self.Y = 100
+        self.string = 'Generation Number : 1'
+        self.text = self.font.render(self.string, True, (255, 255, 255))
+        self.textRect = self.text.get_rect()
+        self.textRect.center = (self.X / 2, self.Y / 2)
+
+        self.X1 = 300
+        self.Y1 = 150
+        self.string1 = 'No. of Birds: 500'
+        self.text1 = self.font.render(self.string1, True, (255, 255, 255))
+        self.textRect1 = self.text1.get_rect()
+        self.textRect1.center = (self.X1 / 2, self.Y1 / 2)
+
+        self.X2 = 300
+        self.Y2 = 200
+        self.string2 = 'Max Score: 0'
+        self.text2 = self.font.render(self.string2, True, (255, 255, 255))
+        self.textRect2 = self.text2.get_rect()
+        self.textRect2.center = (self.X2 / 2, self.Y2 / 2)
+
+    def updateGen(self,genNum):
+        self.string = "Generation Number: "+str(genNum)
+        self.text = self.font.render(self.string, True, (255, 255, 255))
+        self.textRect = self.text.get_rect()
+        self.textRect.center = (self.X / 2, self.Y / 2)
+
+    def updateBirdNum(self,birdNum):
+        self.string1 = "No. of Birds: "+str(birdNum)
+        self.text1 = self.font.render(self.string1, True, (255, 255, 255))
+        self.textRect1 = self.text1.get_rect()
+        self.textRect1.center = (self.X1 / 2, self.Y1 / 2)
+
+    def updateMaxScore(self,maxScore):
+        self.string2 = 'Max Score: '+ str(maxScore)
+        self.text2 = self.font.render(self.string2, True, (255, 255, 255))
+        self.textRect2 = self.text2.get_rect()
+        self.textRect2.center = (self.X2 / 2, self.Y2 / 2)
+
+    def draw(self,screen):
+        rect = Rect(15, 30, 275, 100)
+        shape_surf = pygame.Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
+        pygame.draw.rect(shape_surf, (0,0,0,127), shape_surf.get_rect())
+        screen.blit(shape_surf, rect)
+        screen.blit(self.text,self.textRect)
+        screen.blit(self.text1,self.textRect1)
+        screen.blit(self.text2,self.textRect2)
+        
 
 # bird class
 class Bird:
@@ -50,7 +105,7 @@ class Bird:
     def move(self):
         # game variables
         gravity = 0.25
-        self.score+=1
+        self.score += 1
         self.vel += gravity
         self.bird_rect.centery += self.vel
         if self.bird_rect.centery >= WIN_HEIGHT:
@@ -98,7 +153,7 @@ class Pipe:
         pipe_height = [500, 600, 700]
         self.height = random.choice(pipe_height)
         self.bottom_pipe = pipe_surface.get_rect(midtop=(400, self.height))
-        self.top_pipe = pipe_surface.get_rect(midbottom=(400, self.height - 350))
+        self.top_pipe = pipe_surface.get_rect(midbottom=(400, self.height - 300))
 
     def move_pipes(self,pipes):
         self.bottom_pipe.left -= 4
@@ -129,11 +184,30 @@ class Pipe:
         screen.blit(floor_surface, (self.x + 500, self.y))
 """
 
-def draw_surfaces(screen, pipes):
-
+def draw_surfaces(screen, pipes, hud, birdNum):
+    
     screen.blit(bg_surface, (0, 0))
     for pipe in pipes:
           pipe.draw_pipes(screen)
+    hud.updateBirdNum(birdNum)
+    hud.draw(screen)
+
+#crossover
+def crossover(parent1,parent2):
+    a = np.random.uniform(0,1)
+    child1 = Bird()
+    child2 = Bird()
+    for i in range(len(parent1.brain.wih)):
+            for j in range(len(parent1.brain.wih[i])):
+                child1.brain.wih[i][j] = a*(parent1.brain.wih[i][j]+ (1-a)*parent2.brain.wih[i][j])
+                child2.brain.wih[i][j] = a*(parent2.brain.wih[i][j]+ (1-a)*parent1.brain.wih[i][j])
+    
+    for i in range(len(parent1.brain.who)):
+            for j in range(len(parent1.brain.who[i])):
+                child1.brain.who[i][j] = a*(parent1.brain.who[i][j]+ (1-a)*parent2.brain.who[i][j])
+                child2.brain.who[i][j] = a*(parent2.brain.who[i][j]+ (1-a)*parent1.brain.who[i][j])
+
+    return child1,child2
 
 # picks a child from the previous generation randomly
 def pick_child(savedBirds):
@@ -159,8 +233,10 @@ def calculate_fitness(birds):
 # creates new population of birds randomly picked out of previous generation with its experience intact
 def next_gen(birds,savedBirds):
     calculate_fitness(savedBirds)
-    for i in range(0,POPULATION):
+    for i in range(0,int(POPULATION-POPULATION/10)):
         birds.append(pick_child(savedBirds))
+    for i in range(0,int(0.1*POPULATION)):
+        birds.append(Bird())
     savedBirds = []
     return savedBirds
 
@@ -171,11 +247,14 @@ def main(win):
     birds = []
     SPAWNPIPE = pygame.USEREVENT
     pygame.time.set_timer(SPAWNPIPE, 1200)
+    hud = HUD()
+    genNum = 1
 
     for i in range(0,POPULATION):
         birds.append(Bird())
 
     while True:
+        global maxScore
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -187,9 +266,12 @@ def main(win):
             if event.type == SPAWNPIPE:
                 pipe_list.append(Pipe())
 
-        draw_surfaces(win, pipe_list)
+        draw_surfaces(win, pipe_list,hud,len(birds))
 
         for i in range(len(birds)-1,-1,-1):
+            if(birds[i].score>maxScore):
+                maxScore=birds[i].score
+                hud.updateMaxScore(maxScore)    
             birds[i].think(pipe_list)
             birds[i].move()
             birds[i].draw(win)
@@ -197,6 +279,8 @@ def main(win):
                 savedBirds.append(birds.pop(i))
 
         if len(birds) == 0:
+            genNum+=1
+            hud.updateGen(genNum)
             savedBirds=next_gen(birds,savedBirds)
             pipe_list = []
         for pipe in pipe_list:

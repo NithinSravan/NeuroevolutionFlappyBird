@@ -8,8 +8,9 @@ import math
 
 WIN_HEIGHT = 800
 WIN_WIDTH = 500
-POPULATION = 250
+POPULATION = 300
 maxScore = 0
+genScores = []
 pygame.init()
 screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT),pygame.SRCALPHA)
 
@@ -153,7 +154,7 @@ class Pipe:
         pipe_height = [500, 600, 700]
         self.height = random.choice(pipe_height)
         self.bottom_pipe = pipe_surface.get_rect(midtop=(400, self.height))
-        self.top_pipe = pipe_surface.get_rect(midbottom=(400, self.height - 300))
+        self.top_pipe = pipe_surface.get_rect(midbottom=(400, self.height - 350))
 
     def move_pipes(self,pipes):
         self.bottom_pipe.left -= 4
@@ -249,6 +250,8 @@ def main(win):
     pygame.time.set_timer(SPAWNPIPE, 1200)
     hud = HUD()
     genNum = 1
+    end = False
+
 
     for i in range(0,POPULATION):
         birds.append(Bird())
@@ -257,7 +260,11 @@ def main(win):
         global maxScore
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or end:
+                results = np.array(genScores)
+
+# save to csv file
+                np.savetxt('data.csv', results, delimiter=',')
                 pygame.quit()
                 sys.exit()
             #if event.type == pygame.KEYDOWN:
@@ -271,7 +278,10 @@ def main(win):
         for i in range(len(birds)-1,-1,-1):
             if(birds[i].score>maxScore):
                 maxScore=birds[i].score
-                hud.updateMaxScore(maxScore)    
+                hud.updateMaxScore(maxScore)
+                if (maxScore >= 10000) and (end==False):
+                    genScores.append(float(maxScore))
+                    end = True
             birds[i].think(pipe_list)
             birds[i].move()
             birds[i].draw(win)
@@ -281,6 +291,9 @@ def main(win):
         if len(birds) == 0:
             genNum+=1
             hud.updateGen(genNum)
+            genScore = max(savedBird.score for savedBird in savedBirds)
+            genScores.append(float(genScore))
+            print(genScore)
             savedBirds=next_gen(birds,savedBirds)
             pipe_list = []
         for pipe in pipe_list:

@@ -1,4 +1,5 @@
-import pygame, random
+import pygame
+import random
 import sys
 import numpy as np
 from NeuralNetwork import neuralNetwork
@@ -12,7 +13,7 @@ POPULATION = 300
 maxScore = 0
 genScores = []
 pygame.init()
-screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT),pygame.SRCALPHA)
+screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT), pygame.SRCALPHA)
 
 # bg image
 bg_surface = pygame.image.load('Assets/bg.png').convert()
@@ -31,7 +32,9 @@ bird_surface = pygame.transform.scale2x(bird_surface)
 pipe_surface = pygame.image.load('Assets/pipe.png').convert()
 pipe_surface = pygame.transform.scale2x(pipe_surface)
 
-#class HUD
+# class HUD
+
+
 class HUD:
     def __init__(self):
         self.font = pygame.font.Font('Assets/Raleway-Regular.ttf', 24)
@@ -56,42 +59,42 @@ class HUD:
         self.textRect2 = self.text2.get_rect()
         self.textRect2.center = (self.X2 / 2, self.Y2 / 2)
 
-    def updateGen(self,genNum):
+    def updateGen(self, genNum):
         self.string = "Generation Number: "+str(genNum)
         self.text = self.font.render(self.string, True, (255, 255, 255))
         self.textRect = self.text.get_rect()
         self.textRect.center = (self.X / 2, self.Y / 2)
 
-    def updateBirdNum(self,birdNum):
+    def updateBirdNum(self, birdNum):
         self.string1 = "No. of Birds: "+str(birdNum)
         self.text1 = self.font.render(self.string1, True, (255, 255, 255))
         self.textRect1 = self.text1.get_rect()
         self.textRect1.center = (self.X1 / 2, self.Y1 / 2)
 
-    def updateMaxScore(self,maxScore):
-        self.string2 = 'Max Score: '+ str(maxScore)
+    def updateMaxScore(self, maxScore):
+        self.string2 = 'Max Score: ' + str(maxScore)
         self.text2 = self.font.render(self.string2, True, (255, 255, 255))
         self.textRect2 = self.text2.get_rect()
         self.textRect2.center = (self.X2 / 2, self.Y2 / 2)
 
-    def draw(self,screen):
+    def draw(self, screen):
         rect = Rect(15, 30, 275, 100)
         shape_surf = pygame.Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
-        pygame.draw.rect(shape_surf, (0,0,0,127), shape_surf.get_rect())
+        pygame.draw.rect(shape_surf, (0, 0, 0, 127), shape_surf.get_rect())
         screen.blit(shape_surf, rect)
-        screen.blit(self.text,self.textRect)
-        screen.blit(self.text1,self.textRect1)
-        screen.blit(self.text2,self.textRect2)
-        
+        screen.blit(self.text, self.textRect)
+        screen.blit(self.text1, self.textRect1)
+        screen.blit(self.text2, self.textRect2)
+
 
 # bird class
 class Bird:
-    def __init__(self,brain = None):
+    def __init__(self, brain=None):
         self.x = 50
         self.y = 375
         self.bird_rect = bird_surface.get_rect(center=(self.x, self.y))
         self.vel = 0
-        if brain !=None:
+        if brain != None:
             self.brain = brain
         else:
             self.brain = neuralNetwork(4, 4, 2, 0.1)
@@ -118,16 +121,16 @@ class Bird:
     def draw(self, win):
         win.blit(bird_surface, self.bird_rect)
 
-    def think(self,pipes):
+    def think(self, pipes):
         closest = None
         closestD = np.inf
         for pipe in pipes:
             d = pipe.top_pipe.left - self.x
-            if d < closestD and d > 0 :
+            if d < closestD and d > 0:
                 closest = pipe
                 closestD = d
 
-        inputs = [0,0,0,0]
+        inputs = [0, 0, 0, 0]
         output = []
         if closest != None:
             inputs[0] = self.y / WIN_HEIGHT
@@ -138,36 +141,40 @@ class Bird:
 
         if len(output):
             if output[0] > output[1]:
-                 self.jump()
+                self.jump()
 
-    def collision(self,pipes):
-        for i in range(len(pipes)-1,-1,-1):
+    def collision(self, pipes):
+        for i in range(len(pipes)-1, -1, -1):
             if self.bird_rect.colliderect(pipes[i].top_pipe) or self.bird_rect.colliderect(pipes[i].bottom_pipe):
                 return 1
-        #if self.bird_rect.top <= -100 or self.bird_rect.bottom >= WIN_HEIGHT - 180:
-            #print("collision")
+        # if self.bird_rect.top <= -100 or self.bird_rect.bottom >= WIN_HEIGHT - 180:
+            # print("collision")
          #   return 0
         return 0
 # pipe class
+
+
 class Pipe:
     def __init__(self):
         pipe_height = [500, 600, 700]
         self.height = random.choice(pipe_height)
         self.bottom_pipe = pipe_surface.get_rect(midtop=(400, self.height))
-        self.top_pipe = pipe_surface.get_rect(midbottom=(400, self.height - 350))
+        self.top_pipe = pipe_surface.get_rect(
+            midbottom=(400, self.height - 350))
 
-    def move_pipes(self,pipes):
+    def move_pipes(self, pipes):
         self.bottom_pipe.left -= 4
         self.top_pipe.left -= 4
         if self.top_pipe.left <= - self.top_pipe.width:
-            for i in range(len(pipes)-1,-1,-1):
+            for i in range(len(pipes)-1, -1, -1):
                 if pipes[i] == self:
                     pipes.pop(i)
 
-    def draw_pipes(self,screen):
+    def draw_pipes(self, screen):
         screen.blit(pipe_surface, self.bottom_pipe)
         flip_pipe = pygame.transform.flip(pipe_surface, False, True)
         screen.blit(flip_pipe, self.top_pipe)
+
 
 # ground class
 """class Ground:
@@ -185,45 +192,56 @@ class Pipe:
         screen.blit(floor_surface, (self.x + 500, self.y))
 """
 
+
 def draw_surfaces(screen, pipes, hud, birdNum):
-    
+
     screen.blit(bg_surface, (0, 0))
     for pipe in pipes:
-          pipe.draw_pipes(screen)
+        pipe.draw_pipes(screen)
     hud.updateBirdNum(birdNum)
     hud.draw(screen)
 
-#crossover
-def crossover(parent1,parent2):
-    a = np.random.uniform(0,1)
+# crossover
+
+
+def crossover(parent1, parent2):
+    a = np.random.uniform(0, 1)
     child1 = Bird()
     child2 = Bird()
     for i in range(len(parent1.brain.wih)):
-            for j in range(len(parent1.brain.wih[i])):
-                child1.brain.wih[i][j] = a*(parent1.brain.wih[i][j]+ (1-a)*parent2.brain.wih[i][j])
-                child2.brain.wih[i][j] = a*(parent2.brain.wih[i][j]+ (1-a)*parent1.brain.wih[i][j])
-    
-    for i in range(len(parent1.brain.who)):
-            for j in range(len(parent1.brain.who[i])):
-                child1.brain.who[i][j] = a*(parent1.brain.who[i][j]+ (1-a)*parent2.brain.who[i][j])
-                child2.brain.who[i][j] = a*(parent2.brain.who[i][j]+ (1-a)*parent1.brain.who[i][j])
+        for j in range(len(parent1.brain.wih[i])):
+            child1.brain.wih[i][j] = a * \
+                (parent1.brain.wih[i][j] + (1-a)*parent2.brain.wih[i][j])
+            child2.brain.wih[i][j] = a * \
+                (parent2.brain.wih[i][j] + (1-a)*parent1.brain.wih[i][j])
 
-    return child1,child2
+    for i in range(len(parent1.brain.who)):
+        for j in range(len(parent1.brain.who[i])):
+            child1.brain.who[i][j] = a * \
+                (parent1.brain.who[i][j] + (1-a)*parent2.brain.who[i][j])
+            child2.brain.who[i][j] = a * \
+                (parent2.brain.who[i][j] + (1-a)*parent1.brain.who[i][j])
+
+    return child1, child2
 
 # picks a child from the previous generation randomly
+
+
 def pick_child(savedBirds):
     i = 0
-    r = np.random.uniform(0,1)
+    r = np.random.uniform(0, 1)
     while r > 0:
         r = r - savedBirds[i].fitness
-        i+=1
-    i-=1
+        i += 1
+    i -= 1
     bird = savedBirds[i]
     child = Bird(bird.brain)
     child.brain.map_mutate(0.1)
     return child
 
 # returns fitness score
+
+
 def calculate_fitness(birds):
     sum = 0
     for bird in birds:
@@ -232,14 +250,17 @@ def calculate_fitness(birds):
         bird.fitness = bird.score / sum
 
 # creates new population of birds randomly picked out of previous generation with its experience intact
-def next_gen(birds,savedBirds):
+
+
+def next_gen(birds, savedBirds):
     calculate_fitness(savedBirds)
-    for i in range(0,int(POPULATION-POPULATION/10)):
+    for i in range(0, int(POPULATION-POPULATION/10)):
         birds.append(pick_child(savedBirds))
-    for i in range(0,int(0.1*POPULATION)):
+    for i in range(0, int(0.1*POPULATION)):
         birds.append(Bird())
     savedBirds = []
     return savedBirds
+
 
 def main(win):
     clock = pygame.time.Clock()
@@ -252,8 +273,7 @@ def main(win):
     genNum = 1
     end = False
 
-
-    for i in range(0,POPULATION):
+    for i in range(0, POPULATION):
         birds.append(Bird())
 
     while True:
@@ -267,19 +287,19 @@ def main(win):
                 np.savetxt('data.csv', results, delimiter=',')
                 pygame.quit()
                 sys.exit()
-            #if event.type == pygame.KEYDOWN:
+            # if event.type == pygame.KEYDOWN:
             #    if event.key == pygame.K_SPACE:
              #       bird.jump()
             if event.type == SPAWNPIPE:
                 pipe_list.append(Pipe())
 
-        draw_surfaces(win, pipe_list,hud,len(birds))
+        draw_surfaces(win, pipe_list, hud, len(birds))
 
-        for i in range(len(birds)-1,-1,-1):
-            if(birds[i].score>maxScore):
-                maxScore=birds[i].score
+        for i in range(len(birds)-1, -1, -1):
+            if(birds[i].score > maxScore):
+                maxScore = birds[i].score
                 hud.updateMaxScore(maxScore)
-                if (maxScore >= 10000) and (end==False):
+                if (maxScore >= 10000) and (end == False):
                     genScores.append(float(maxScore))
                     end = True
             birds[i].think(pipe_list)
@@ -289,17 +309,18 @@ def main(win):
                 savedBirds.append(birds.pop(i))
 
         if len(birds) == 0:
-            genNum+=1
+            genNum += 1
             hud.updateGen(genNum)
             genScore = max(savedBird.score for savedBird in savedBirds)
             genScores.append(float(genScore))
             print(genScore)
-            savedBirds=next_gen(birds,savedBirds)
+            savedBirds = next_gen(birds, savedBirds)
             pipe_list = []
         for pipe in pipe_list:
             pipe.move_pipes(pipe_list)
 
         pygame.display.update()
         clock.tick(120)
+
 
 main(screen)

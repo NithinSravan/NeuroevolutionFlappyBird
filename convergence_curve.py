@@ -5,5 +5,8 @@ from numpy import loadtxt
 data = loadtxt('data.csv', delimiter=',')
 
 plt.plot(data)
+plt.xlabel("Number of Generations")
+plt.ylabel("Max Score in each generation")
+plt.title("Learning Curve")
 plt.show()
 
